@@ -23,7 +23,7 @@ class Hiera
 
         if File.exist?(module_config)
           Hiera.debug("Reading config from %s file" % module_config)
-          config = load_data(module_config)
+          config = load_config(module_config)
         end
 
         config["path"] = path
@@ -31,11 +31,23 @@ class Hiera
         default_config.merge(config)
       end
 
+      def load_config(path)
+        load_data(path) do |data|
+          if hocon = Hocon.parse(data)
+            symbolized = Hash.new
+            hocon.each do |k,v|
+              symbolized[k.to_sym] = v
+            end
+            return symbolized
+          end
+	end
+      end
+
       def load_data(path)
         return {} unless File.exist?(path)
 
         @cache.read(path, Hash, {}) do |data|
-          Hocon.load(data)
+          Hocon.parse(data)
         end
       end
 
