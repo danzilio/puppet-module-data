@@ -2,7 +2,7 @@ class Hiera
   module Backend
     class Module_data_backend
       def initialize(cache=nil)
-        require 'yaml'
+        require 'hocon'
         require 'hiera/filecache'
 
         Hiera.debug("Hiera Module Data backend starting")
@@ -18,14 +18,14 @@ class Hiera
         return default_config unless mod
 
         path = mod.path
-        module_config = File.join(path, "data", "hiera.yaml")
+        module_config = File.join(path, "data", "hiera.conf")
         config = {}
 
         if File.exist?(module_config)
           Hiera.debug("Reading config from %s file" % module_config)
           config = load_data(module_config)
         end
-        
+
         config["path"] = path
 
         default_config.merge(config)
@@ -35,7 +35,7 @@ class Hiera
         return {} unless File.exist?(path)
 
         @cache.read(path, Hash, {}) do |data|
-          YAML.load(data)
+          Hocon.load(data)
         end
       end
 
@@ -62,7 +62,7 @@ class Hiera
 
         config[:hierarchy].insert(0, order_override) if order_override
         config[:hierarchy].each do |source|
-          source = File.join(config["path"], "data", "%s.yaml" % Backend.parse_string(source, scope))
+          source = File.join(config["path"], "data", "%s.conf" % Backend.parse_string(source, scope))
 
           Hiera.debug("Looking for data in source %s" % source)
           data = load_data(source)
